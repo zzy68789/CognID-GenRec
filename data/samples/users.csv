@@ -1,0 +1,4 @@
+user_id,signup_time,segment
+u_001,2026-05-20T10:00:00,technology_reader
+u_002,2026-05-21T11:30:00,finance_reader
+u_003,2026-05-22T09:15:00,campus_reader

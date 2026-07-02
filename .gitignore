@@ -1,0 +1,26 @@
+# Python cache
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# Local datasets and generated artifacts
+data/raw/
+data/processed/
+*.parquet
+*.pt
+*.npy
+
+# Local/private resume material
+docs/RESUME_NOTES.md
+
+# Local environment
+.venv/
+venv/
+.env
+.env.*
+
+# IDE
+.idea/
+.vscode/

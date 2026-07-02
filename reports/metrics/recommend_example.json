@@ -1,0 +1,41 @@
+{
+  "user_id": "u_001",
+  "items": [
+    {
+      "item_id": "i_005",
+      "score": 0.5,
+      "semantic_id": [
+        1,
+        5,
+        5
+      ],
+      "reason": "Matched by semantic ID transition and content reranking.",
+      "source": "generative_rerank",
+      "recall_path": [
+        "history_items=i_001",
+        "history_semantic_ids=2-0-4",
+        "generated_semantic_ids=5-1-1>1-5-5",
+        "decoded_item=i_005;semantic_id=1-5-5"
+      ],
+      "rerank_reason": "semantic_score_topic_author_rerank"
+    },
+    {
+      "item_id": "i_002",
+      "score": 1.0,
+      "semantic_id": [
+        5,
+        1,
+        1
+      ],
+      "reason": "Protected high-quality long-tail content after semantic retrieval.",
+      "source": "generative_rerank",
+      "recall_path": [
+        "history_items=i_001",
+        "history_semantic_ids=2-0-4",
+        "generated_semantic_ids=5-1-1>1-5-5",
+        "decoded_item=i_002;semantic_id=5-1-1"
+      ],
+      "rerank_reason": "long_tail_protection"
+    }
+  ]
+}

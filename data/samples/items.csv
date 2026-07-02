@@ -1,0 +1,7 @@
+item_id,title,body,topic,author_id,publish_time,quality_score
+i_001,AI startup funding,Weekly roundup of AI startup financing and product updates,technology,a_001,2026-06-01T08:00:00,0.91
+i_002,Recommendation system notes,Practical notes on retrieval ranking and offline metrics,technology,a_002,2026-06-01T09:30:00,0.88
+i_003,Campus food guide,Student curated guide for affordable campus meals,lifestyle,a_003,2026-06-02T11:00:00,0.72
+i_004,Quant market brief,Daily brief covering market factors and risk signals,finance,a_004,2026-06-02T13:20:00,0.84
+i_005,Open source workflow,How small teams review issues tests and release notes,engineering,a_002,2026-06-03T10:15:00,0.86
+i_006,Creator economy trends,Content platform trends for creators and recommendation teams,business,a_005,2026-06-03T16:40:00,0.79
