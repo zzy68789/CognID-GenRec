@@ -6,7 +6,9 @@ from itertools import combinations
 
 
 class ItemCFRecommender:
-    def __init__(self, max_items_per_user: int = 100, max_neighbors_per_item: int = 200) -> None:
+    def __init__(
+        self, max_items_per_user: int = 100, max_neighbors_per_item: int = 200
+    ) -> None:
         self.max_items_per_user = max_items_per_user
         self.max_neighbors_per_item = max_neighbors_per_item
         self.item_similarities: dict[str, dict[str, float]] = {}
@@ -35,21 +37,40 @@ class ItemCFRecommender:
         self.item_popularity = popularity
         return self
 
-    def recommend(self, history_item_ids: Iterable[str] | None = None, top_k: int = 10) -> list[str]:
+    def recommend(
+        self,
+        history_item_ids: Iterable[str] | None = None,
+        top_k: int = 10,
+        candidate_item_ids: Iterable[str] | None = None,
+    ) -> list[str]:
         history = {str(item_id) for item_id in history_item_ids or []}
+        candidates = (
+            {str(item_id) for item_id in candidate_item_ids}
+            if candidate_item_ids is not None
+            else None
+        )
         scores: defaultdict[str, float] = defaultdict(float)
         for item_id in history:
-            for candidate, similarity in self.item_similarities.get(item_id, {}).items():
-                if candidate in history:
+            for candidate, similarity in self.item_similarities.get(
+                item_id, {}
+            ).items():
+                if candidate in history or (
+                    candidates is not None and candidate not in candidates
+                ):
                     continue
                 scores[candidate] += similarity
 
-        if not scores:
+        if candidates is not None:
+            for item_id in candidates - history:
+                scores.setdefault(item_id, float(self.item_popularity.get(item_id, 0)))
+        elif not scores:
             for item_id, count in self.item_popularity.items():
                 if item_id not in history:
                     scores[item_id] = float(count)
 
-        ranked = sorted(scores.items(), key=lambda item_score: (-item_score[1], item_score[0]))
+        ranked = sorted(
+            scores.items(), key=lambda item_score: (-item_score[1], item_score[0])
+        )
         return [item_id for item_id, _ in ranked[:top_k]]
 
 
@@ -67,4 +88,6 @@ def _deduplicate_preserving_order(item_ids: Iterable[str]) -> list[str]:
 def _top_neighbors(neighbors: dict[str, float], limit: int) -> list[tuple[str, float]]:
     if limit <= 0:
         return []
-    return sorted(neighbors.items(), key=lambda item_score: (-item_score[1], item_score[0]))[:limit]
+    return sorted(
+        neighbors.items(), key=lambda item_score: (-item_score[1], item_score[0])
+    )[:limit]

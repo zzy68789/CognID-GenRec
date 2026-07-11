@@ -47,13 +47,17 @@ data/raw/kuairec/
 ## 运行命令
 
 ```powershell
-python scripts\prepare_kuairec_data.py --raw data\raw\kuairec --out data\processed\kuairec --matrix small
+python scripts\prepare_kuairec_data.py --raw data\raw\kuairec --out data\processed\kuairec --matrix big
 python scripts\train_kuairec_semantic_id.py --items data\processed\kuairec\items.parquet --method kmeans --out data\processed\kuairec\semantic_ids.parquet
 python scripts\train_kuairec_retriever.py --data data\processed\kuairec --epochs 1 --batch-size 64 --out data\processed\kuairec\kuai_retriever.pt
-python scripts\evaluate_kuairec_retriever.py --method popular --data data\processed\kuairec --out reports\metrics\kuairec_popular.md
-python scripts\evaluate_kuairec_retriever.py --method itemcf --data data\processed\kuairec --out reports\metrics\kuairec_itemcf.md
-python scripts\evaluate_kuairec_retriever.py --method ann_transformer --data data\processed\kuairec --out reports\metrics\kuairec_ann_transformer.md
+python scripts\evaluate_kuairec_retriever.py --method popular --data data\processed\kuairec --out reports\metrics\kuairec_sequential_next_item_popular.md
+python scripts\evaluate_kuairec_retriever.py --method itemcf --data data\processed\kuairec --out reports\metrics\kuairec_sequential_next_item_itemcf.md
+python scripts\evaluate_kuairec_retriever.py --method ann_transformer --data data\processed\kuairec --out reports\metrics\kuairec_sequential_next_item_ann_transformer.md
 ```
+
+`prepare_kuairec_data.py` 会生成 `candidate_manifest.json`。评估命令默认加载该清单，按
+`sequential_next_item` 协议让所有方法使用同一 full-sort candidate universe，并确保
+Popular/ItemCF 只使用 `train_history_item_ids` 拟合。旧 processed data 需要先重新执行 prepare。
 
 ## 最新离线指标
 

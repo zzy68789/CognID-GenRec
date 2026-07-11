@@ -17,14 +17,19 @@ def build_kuairec_sequences(
     if missing:
         raise ValueError(f"interactions missing columns: {sorted(missing)}")
 
-    filtered = frame[pd.to_numeric(frame["action_weight"], errors="coerce") >= min_action_weight]
+    filtered = frame[
+        pd.to_numeric(frame["action_weight"], errors="coerce") >= min_action_weight
+    ]
     sorted_frame = filtered.sort_values(["user_id", "timestamp", "video_id"])
     sequences = []
     for user_id, user_events in sorted_frame.groupby("user_id", sort=True):
         if len(user_events) < min_history + 2:
             continue
         timestamps = [int(value) for value in user_events["timestamp"].tolist()]
-        deltas = [0, *[max(0, right - left) for left, right in zip(timestamps, timestamps[1:])]]
+        deltas = [
+            0,
+            *[max(0, right - left) for left, right in zip(timestamps, timestamps[1:])],
+        ]
         item_ids = [str(value) for value in user_events["video_id"].tolist()]
         actions = [str(value) for value in user_events["action"].tolist()]
         weights = [float(value) for value in user_events["action_weight"].tolist()]
@@ -38,6 +43,8 @@ def build_kuairec_sequences(
                 "timestamps": timestamps,
                 "time_deltas": deltas,
                 "train_history_item_ids": item_ids[:-2],
+                "validation_history_item_ids": item_ids[:-2],
+                "test_history_item_ids": item_ids[:-1],
                 "validation_item_id": item_ids[-2],
                 "test_item_id": item_ids[-1],
                 "validation_action": actions[-2],

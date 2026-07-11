@@ -5,10 +5,17 @@ from pathlib import Path
 
 import pandas as pd
 
+from cognid_genrec.evaluation.protocol import (
+    build_sequential_candidate_manifest,
+    write_candidate_manifest,
+)
 from cognid_genrec.kuairec.behaviors import attach_actions
 from cognid_genrec.kuairec.features import build_item_features, build_user_features
 from cognid_genrec.kuairec.loaders import load_raw_kuairec, resolve_raw_file
-from cognid_genrec.kuairec.sequences import build_kuairec_sequences, write_kuairec_sequences
+from cognid_genrec.kuairec.sequences import (
+    build_kuairec_sequences,
+    write_kuairec_sequences,
+)
 from cognid_genrec.kuairec.schemas import RAW_FILES
 
 
@@ -20,6 +27,7 @@ def main() -> None:
     parser.add_argument("--min-history", type=int, default=3)
     parser.add_argument("--max-users", type=int, default=0)
     parser.add_argument("--max-interactions", type=int, default=0)
+    parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
 
     raw_dir = Path(args.raw)
@@ -58,6 +66,13 @@ def main() -> None:
     users.to_parquet(out_dir / "users.parquet", index=False)
     users.to_parquet(out_dir / "user_features.parquet", index=False)
     write_kuairec_sequences(sequences, out_dir / "user_sequences.jsonl")
+    manifest = build_sequential_candidate_manifest(
+        sequences=sequences,
+        candidate_item_ids=interactions["video_id"].astype(str),
+        dataset_matrix=args.matrix,
+        random_seed=args.seed,
+    )
+    write_candidate_manifest(manifest, out_dir / "candidate_manifest.json")
 
     print(data_note)
     print(
@@ -65,7 +80,8 @@ def main() -> None:
         f"users={users['user_id'].nunique()}, "
         f"items={items['item_id'].nunique()}, "
         f"interactions={len(interactions)}, "
-        f"sequences={len(sequences)}"
+        f"sequences={len(sequences)}, "
+        f"candidates={manifest.candidate_count}"
     )
 
 
@@ -153,7 +169,12 @@ def sample_kuairec_tables() -> dict[str, pd.DataFrame]:
     users = pd.DataFrame(
         {
             "user_id": [1, 2, 3, 4],
-            "user_active_degree": ["high_active", "middle_active", "middle_active", "low_active"],
+            "user_active_degree": [
+                "high_active",
+                "middle_active",
+                "middle_active",
+                "low_active",
+            ],
         }
     )
     return {

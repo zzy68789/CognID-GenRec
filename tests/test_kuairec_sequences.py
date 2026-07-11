@@ -28,6 +28,8 @@ def test_build_kuairec_sequences_sorts_and_splits():
         "short_view",
     ]
     assert sequence["train_history_item_ids"] == ["11", "10"]
+    assert sequence["validation_history_item_ids"] == ["11", "10"]
+    assert sequence["test_history_item_ids"] == ["11", "10", "12"]
     assert sequence["validation_item_id"] == "12"
     assert sequence["test_item_id"] == "13"
     assert sequence["test_action"] == "short_view"
@@ -57,7 +59,9 @@ def test_load_raw_kuairec_finds_nested_zenodo_layout(tmp_path):
         "1,10,5,10,100,2020-01-01,100,0.5\n",
         encoding="utf-8",
     )
-    (data_dir / "item_categories.csv").write_text("video_id,feat\n10,food\n", encoding="utf-8")
+    (data_dir / "item_categories.csv").write_text(
+        "video_id,feat\n10,food\n", encoding="utf-8"
+    )
     (data_dir / "kuairec_caption_category.csv").write_text(
         "video_id,caption,category\n10,cooking,food\n",
         encoding="utf-8",

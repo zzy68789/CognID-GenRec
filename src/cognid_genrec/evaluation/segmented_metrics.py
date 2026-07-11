@@ -25,10 +25,15 @@ def evaluate_segmented_recommendations(
     sequences: Sequence[dict],
     item_features: pd.DataFrame,
     k_values: Sequence[int] = (10, 20),
+    candidate_item_ids: Sequence[str] | set[str] | None = None,
 ) -> dict[str, dict[str, float]]:
     item_topics = _item_topics(item_features)
     item_popularity = _item_popularity(item_features)
-    catalog = set(item_features.get("item_id", pd.Series(dtype=str)).astype(str))
+    catalog = (
+        {str(item_id) for item_id in candidate_item_ids}
+        if candidate_item_ids is not None
+        else set(item_features.get("item_id", pd.Series(dtype=str)).astype(str))
+    )
     if not catalog:
         catalog = {
             str(item_id)
@@ -47,7 +52,9 @@ def evaluate_segmented_recommendations(
         activity = _activity_bucket(len(sequence.get("train_history_item_ids", [])))
         groups.setdefault(f"activity={activity}", []).append(sequence)
         target = str(sequence.get("test_item_id", ""))
-        groups.setdefault(f"popularity={item_popularity.get(target, 'tail')}", []).append(sequence)
+        groups.setdefault(
+            f"popularity={item_popularity.get(target, 'tail')}", []
+        ).append(sequence)
 
     return {
         segment_name: _metrics_for_group(
@@ -65,18 +72,29 @@ def write_segmented_metrics_report(
     method: str,
     report: dict[str, dict[str, float]],
     output_path: str | Path,
+    metadata: Mapping[str, object] | None = None,
 ) -> None:
     path = Path(output_path)
     path.parent.mkdir(parents=True, exist_ok=True)
     metric_names = sorted({metric for metrics in report.values() for metric in metrics})
-    lines = [
-        f"# KuaiRec Retrieval Evaluation: {method}",
-        "",
-        "| Segment | " + " | ".join(metric_names) + " |",
-        "|---|" + "|".join(["---:"] * len(metric_names)) + "|",
-    ]
+    protocol = (
+        str(metadata.get("protocol")) if metadata and metadata.get("protocol") else ""
+    )
+    title = f"{protocol}/{method}" if protocol else method
+    lines = [f"# KuaiRec Retrieval Evaluation: {title}", ""]
+    if metadata:
+        lines.extend(f"- {key}: {value}" for key, value in metadata.items())
+        lines.append("")
+    lines.extend(
+        [
+            "| Segment | " + " | ".join(metric_names) + " |",
+            "|---|" + "|".join(["---:"] * len(metric_names)) + "|",
+        ]
+    )
     for segment_name in sorted(report):
-        values = [f"{report[segment_name].get(metric, 0.0):.4f}" for metric in metric_names]
+        values = [
+            f"{report[segment_name].get(metric, 0.0):.4f}" for metric in metric_names
+        ]
         lines.append("| " + " | ".join([segment_name, *values]) + " |")
     lines.append("")
     path.write_text("\n".join(lines), encoding="utf-8")
@@ -117,8 +135,12 @@ def _metrics_for_group(
         for sequence in sequences
         for item_id in recommendations.get(str(sequence["user_id"]), [])[:max_k]
     }
-    metrics["Coverage"] = len(recommended_items & catalog) / len(catalog) if catalog else 0.0
-    metrics["Diversity"] = _diversity_for_group(recommendations, sequences, item_topics, max_k)
+    metrics["Coverage"] = (
+        len(recommended_items & catalog) / len(catalog) if catalog else 0.0
+    )
+    metrics["Diversity"] = _diversity_for_group(
+        recommendations, sequences, item_topics, max_k
+    )
     return metrics
 
 
@@ -130,7 +152,10 @@ def _diversity_for_group(
 ) -> float:
     scores = []
     for sequence in sequences:
-        ranked = [str(item_id) for item_id in recommendations.get(str(sequence["user_id"]), [])[:k]]
+        ranked = [
+            str(item_id)
+            for item_id in recommendations.get(str(sequence["user_id"]), [])[:k]
+        ]
         if not ranked:
             continue
         topics = {item_topics.get(item_id, "unknown") for item_id in ranked}
@@ -142,11 +167,21 @@ def _item_topics(item_features: pd.DataFrame) -> dict[str, str]:
     if item_features.empty or "item_id" not in item_features.columns:
         return {}
     topic = item_features["topic"] if "topic" in item_features.columns else "unknown"
-    return dict(zip(item_features["item_id"].astype(str), pd.Series(topic).astype(str), strict=False))
+    return dict(
+        zip(
+            item_features["item_id"].astype(str),
+            pd.Series(topic).astype(str),
+            strict=False,
+        )
+    )
 
 
 def _item_popularity(item_features: pd.DataFrame) -> dict[str, str]:
-    if item_features.empty or "item_id" not in item_features.columns or "hot_score" not in item_features.columns:
+    if (
+        item_features.empty
+        or "item_id" not in item_features.columns
+        or "hot_score" not in item_features.columns
+    ):
         return {}
     scores = pd.to_numeric(item_features["hot_score"], errors="coerce").fillna(0.0)
     high = scores.quantile(0.66)

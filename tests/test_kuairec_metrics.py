@@ -63,7 +63,31 @@ def test_segmented_kuairec_report_contains_core_metrics_and_slices(tmp_path):
     assert any(key.startswith("popularity=") for key in report)
 
     output_path = tmp_path / "metrics.md"
-    write_segmented_metrics_report("popular", report, output_path)
+    write_segmented_metrics_report(
+        "popular", report, output_path, metadata={"protocol": "sequential_next_item"}
+    )
     payload = output_path.read_text(encoding="utf-8")
+    assert "sequential_next_item/popular" in payload
     assert "HR@10" in payload
     assert "action=high_interest" in payload
+
+
+def test_segmented_metrics_uses_explicit_candidate_universe_for_coverage():
+    from cognid_genrec.evaluation.segmented_metrics import (
+        evaluate_segmented_recommendations,
+    )
+
+    report = evaluate_segmented_recommendations(
+        recommendations={"u1": ["3", "4"]},
+        sequences=[{"user_id": "u1", "test_item_id": "3", "test_action": "valid_view"}],
+        item_features=pd.DataFrame(
+            {
+                "item_id": ["1", "2", "3", "4", "outside"],
+                "topic": ["a", "a", "b", "c", "d"],
+            }
+        ),
+        k_values=(2,),
+        candidate_item_ids={"1", "2", "3", "4"},
+    )
+
+    assert report["all"]["Coverage"] == 0.5

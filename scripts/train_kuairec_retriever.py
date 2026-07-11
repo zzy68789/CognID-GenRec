@@ -131,7 +131,6 @@ def build_dataset(
         target = str(sequence.get("validation_item_id") or sequence.get("test_item_id"))
         if not history or target not in item_to_index:
             continue
-        full_items = [str(item_id) for item_id in sequence.get("item_ids", [])]
         history_length = len(history)
         actions = sequence.get("actions", [])[:history_length]
         deltas = sequence.get("time_deltas", [])[:history_length]

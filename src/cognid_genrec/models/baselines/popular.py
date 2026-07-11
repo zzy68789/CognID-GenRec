@@ -17,7 +17,9 @@ class PopularRecommender:
     def __init__(self) -> None:
         self.item_scores: dict[str, float] = {}
 
-    def fit(self, interactions_or_sequences: pd.DataFrame | Iterable[dict]) -> "PopularRecommender":
+    def fit(
+        self, interactions_or_sequences: pd.DataFrame | Iterable[dict]
+    ) -> "PopularRecommender":
         scores: defaultdict[str, float] = defaultdict(float)
         if isinstance(interactions_or_sequences, pd.DataFrame):
             for row in interactions_or_sequences.to_dict("records"):
@@ -44,12 +46,22 @@ class PopularRecommender:
         self.item_scores = dict(scores)
         return self
 
-    def recommend(self, history_item_ids: Iterable[str] | None = None, top_k: int = 10) -> list[str]:
+    def recommend(
+        self,
+        history_item_ids: Iterable[str] | None = None,
+        top_k: int = 10,
+        candidate_item_ids: Iterable[str] | None = None,
+    ) -> list[str]:
         history = set(history_item_ids or [])
+        candidates = (
+            {str(item_id) for item_id in candidate_item_ids}
+            if candidate_item_ids is not None
+            else set(self.item_scores)
+        )
         ranked = sorted(
             (
-                (item_id, score)
-                for item_id, score in self.item_scores.items()
+                (item_id, self.item_scores.get(item_id, 0.0))
+                for item_id in candidates
                 if item_id not in history
             ),
             key=lambda item_score: (-item_score[1], item_score[0]),
